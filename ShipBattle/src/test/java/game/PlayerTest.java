@@ -1,5 +1,9 @@
 package game;
 
+import game.model.Board;
+import game.model.Coordinates;
+import game.model.Player;
+import game.model.ShotResult;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,4 +33,5 @@ class PlayerTest {
 
     assertEquals(ShotResult.MISS, result);
     }
+
 }

@@ -1,10 +1,10 @@
-package game;
+package game.model;
 
-public class Ship {
+public abstract class Ship {
     private final int size;
-    private static int hits = 0;
+    private int hits = 0;
 
-    public Ship(int size) {
+    protected Ship(int size) {
         this.size = size;
     }
 

@@ -1,8 +1,11 @@
-package game;
+package game.model;
+
+import game.exception.InvalidCoordinateException;
+import game.exception.ShipPlacementException;
 
 import java.util.*;
 
-public class Board {
+public class Board implements Iterable<Coordinates>{
 
     private final int width;
     private final int height;
@@ -23,7 +26,7 @@ public class Board {
         return height;
     }
 
-    public boolean placeShip(Ship ship, Coordinates startCoordinate, Orientation orientation) {
+    public void placeShip(Ship ship, Coordinates startCoordinate, Orientation orientation) {
         List<Coordinates> shipCoordinates = new ArrayList<>();
         for (int i = 0; i < ship.getSize(); i++) {
             if (orientation == Orientation.HORIZONTAL) {
@@ -34,10 +37,11 @@ public class Board {
         }
         for (Coordinates coord : shipCoordinates) {
             if (coord.x() < 0 || coord.x() >= width || coord.y() < 0 || coord.y() >= height) {
-                return false;
+                throw new InvalidCoordinateException("Корабель виходить за межі поля! Координата: " + coord);
             }
+
             if (neighborOccupied(coord)) {
-                return false;
+                throw new ShipPlacementException("Неможливо розмістити корабель: він торкається іншого! Координата: " + coord);
             }
         }
 
@@ -45,8 +49,6 @@ public class Board {
         for (Coordinates coord : shipCoordinates) {
             shipsByCoordinates.put(coord, ship);
         }
-
-        return true;
     }
 
     public boolean neighborOccupied(Coordinates coordinates) {
@@ -86,6 +88,61 @@ public class Board {
             return false;
         }
         return allShips.stream().allMatch(Ship::isSunk);
+    }
+
+    public char getCellStatus(int x, int y, boolean showShips) {
+        Coordinates c = new Coordinates(x, y);
+
+        if (firedShots.contains(c)) {
+            if (shipsByCoordinates.containsKey(c)) {
+                return 'X';
+            } else {
+                return 'O';
+            }
+        }
+
+        if (showShips && shipsByCoordinates.containsKey(c)) {
+            return 'S';
+        }
+
+        return '~';
+    }
+
+    @Override
+    public Iterator<Coordinates> iterator() {
+        return new BoardIterator(width, height);
+    }
+
+    private class BoardIterator implements Iterator<Coordinates> {
+        private int currentX = 0;
+        private int currentY = 0;
+        private final int width;
+        private final int height;
+
+        public BoardIterator(int width, int height) {
+            this.width = width;
+            this.height = height;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return currentY < height;
+        }
+
+        @Override
+        public Coordinates next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            Coordinates coord = new Coordinates(currentX, currentY);
+
+            currentX++;
+            if (currentX >= width) {
+                currentX = 0;
+                currentY++;
+            }
+            return coord;
+        }
     }
 
 }

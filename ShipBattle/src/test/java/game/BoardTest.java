@@ -1,83 +1,86 @@
 package game;
 
-import static org.junit.jupiter.api.Assertions.*;
+import game.creation.ShipFactory;
+import game.exception.InvalidCoordinateException;
+import game.exception.ShipPlacementException;
+import game.model.*;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 class BoardTest {
+
     @Test
     void boardShouldBeCreatedWithCorrectDimensions() {
         var board = new Board(10, 10);
 
-        assertEquals (10, board.getWidth());
-        assertEquals (10, board.getHeight());
+        assertEquals(10, board.getWidth());
+        assertEquals(10, board.getHeight());
     }
 
     @Test
-    void shipIsOnTheRigntPlace() {
+    void shipIsOnTheRightPlace() {
         var board = new Board(10, 10);
-
-        var ship = new Ship(1);
+        // Використовуємо фабрику (якщо ти вже реалізував її)
+        var ship = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         var coordinates = new Coordinates(0, 0);
 
-        boolean result = board.placeShip(ship, coordinates, Orientation.HORIZONTAL);
-
-        assertTrue(result);
+        assertDoesNotThrow(() -> board.placeShip(ship, coordinates, Orientation.HORIZONTAL));
     }
 
     @Test
-    void shouldNotAllowPlacingShipOutsideTheBoard() {
+    void shouldThrowExceptionWhenPlacingShipOutsideTheBoard() {
         var board = new Board(10, 10);
-        var ship = new Ship(1);
+        var ship = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         Coordinates outOfBoundsCoordinate = new Coordinates(10, 10);
-
-        boolean result = board.placeShip(ship, outOfBoundsCoordinate, Orientation.HORIZONTAL);
-
-        assertFalse(result);
+        assertThrows(InvalidCoordinateException.class, () ->
+                board.placeShip(ship, outOfBoundsCoordinate, Orientation.HORIZONTAL)
+        );
     }
 
     @Test
-    void shouldNotAllowPlacingTwoShipsOnTheSameCoordinate() {
+    void shouldThrowExceptionWhenPlacingTwoShipsOnTheSameCoordinate() {
         var board = new Board(10, 10);
-        var ship = new Ship(1);
+        var ship1 = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         var coordinates = new Coordinates(5, 5);
 
-        board.placeShip(ship, coordinates, Orientation.HORIZONTAL);
+        assertDoesNotThrow(() -> board.placeShip(ship1, coordinates, Orientation.HORIZONTAL));
 
-        var secondShip = new Ship(1);
-        boolean result = board.placeShip(secondShip, coordinates, Orientation.HORIZONTAL);
+        var ship2 = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
 
-        assertFalse(result);
+        assertThrows(ShipPlacementException.class, () ->
+                board.placeShip(ship2, coordinates, Orientation.HORIZONTAL)
+        );
     }
 
     @Test
-    void shouldNotTouchesShipsWithAngles() {
+    void shouldThrowExceptionWhenShipsTouch() {
         var board = new Board(10, 10);
-        var ship = new Ship(1);
+        var ship1 = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         var coordinates = new Coordinates(5, 5);
 
-        board.placeShip(ship, coordinates, Orientation.HORIZONTAL);
+        board.placeShip(ship1, coordinates, Orientation.HORIZONTAL);
 
-        var secondShip = new Ship(1);
-        var diagonalCoordinates = new Coordinates(5, 5);
-        boolean result = board.placeShip(secondShip, diagonalCoordinates, Orientation.HORIZONTAL);
+        var ship2 = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
+        var diagonalCoordinates = new Coordinates(6, 6);
 
-        assertFalse(result);
+        assertThrows(ShipPlacementException.class, () ->
+                board.placeShip(ship2, diagonalCoordinates, Orientation.HORIZONTAL)
+        );
     }
 
     @Test
-    void shouldAllowPlacingMultiDeckShipHorizontally(){
+    void shouldAllowPlacingMultiDeckShipHorizontally() {
         var board = new Board(10, 10);
-        var ship = new Ship(2);
+        var ship = ShipFactory.createShip(ShipType.DESTROYER);
         var startCoordinates = new Coordinates(2, 2);
 
-        Orientation orientation = Orientation.HORIZONTAL;
-
-        boolean result = board.placeShip(ship, startCoordinates, orientation);
-        assertTrue(result);
+        assertDoesNotThrow(() ->
+                board.placeShip(ship, startCoordinates, Orientation.HORIZONTAL)
+        );
     }
 
     @Test
-    void shoulResultInMissWhenFiringAtEmptyPosition(){
+    void shoulResultInMissWhenFiringAtEmptyPosition() {
         var board = new Board(10, 10);
         var emptyCoordinate = new Coordinates(5, 5);
 
@@ -86,12 +89,12 @@ class BoardTest {
     }
 
     @Test
-    void shoulResultInSunkWhenLastPartOfShipIsHit(){
+    void shoulResultInSunkWhenLastPartOfShipIsHit() {
         var board = new Board(10, 10);
-        var singledeckShip = new Ship(1);
+        var singleDeckShip = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         var coordinates = new Coordinates(3, 3);
 
-        board.placeShip(singledeckShip, coordinates, Orientation.HORIZONTAL);
+        board.placeShip(singleDeckShip, coordinates, Orientation.HORIZONTAL);
 
         ShotResult result = board.fireAT(coordinates);
 
@@ -99,12 +102,12 @@ class BoardTest {
     }
 
     @Test
-    void shoulReportGameIsOverWhenAllShipsSunk(){
+    void shoulReportGameIsOverWhenAllShipsSunk() {
         var board = new Board(10, 10);
-        var ship = new Ship(1);
+        var ship = ShipFactory.createShip(ShipType.TORPEDO_BOAT);
         var coordinates = new Coordinates(3, 3);
-        board.placeShip(ship, coordinates, Orientation.HORIZONTAL);
 
+        board.placeShip(ship, coordinates, Orientation.HORIZONTAL);
         board.fireAT(coordinates);
 
         assertTrue(board.allShipsAreSunk());
